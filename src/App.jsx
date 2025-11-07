@@ -1,28 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
+import ConnectionScreen from './components/ConnectionScreen';
+import ChatInterface from './components/ChatInterface';
+import EncryptionDemo from './components/EncryptionDemo';
+import SyncScreen from './components/SyncScreen';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [connected, setConnected] = useState(false);
+  const [device, setDevice] = useState('Laptop-B');
+  const [showEncryption, setShowEncryption] = useState(false);
+  const [online, setOnline] = useState(false);
+  const [showSync, setShowSync] = useState(false);
+
+  // Simulate online/offline toggle for demo only
+  useEffect(() => {
+    const handler = () => setOnline(navigator.onLine);
+    window.addEventListener('online', handler);
+    window.addEventListener('offline', handler);
+    handler();
+    return () => {
+      window.removeEventListener('online', handler);
+      window.removeEventListener('offline', handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (connected && online) {
+      const t = setTimeout(() => setShowSync(true), 800);
+      return () => clearTimeout(t);
+    } else {
+      setShowSync(false);
+    }
+  }, [connected, online]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
-      </div>
+    <div className="font-inter">
+      {!connected ? (
+        <ConnectionScreen
+          onConnect={(d) => { setDevice(d); setConnected(true); }}
+          onGuestContinue={() => setConnected(true)}
+          bluetoothConnected={connected}
+          connectedDevice={device}
+        />
+      ) : (
+        <>
+          <ChatInterface
+            deviceName={device}
+            onOpenEncryption={() => setShowEncryption(true)}
+            isOnline={online}
+          />
+          <EncryptionDemo open={showEncryption} onClose={() => setShowEncryption(false)} sampleText="Hi" />
+          <SyncScreen open={showSync} onOpenWhatsApp={() => window.open('https://web.whatsapp.com', '_blank')} />
+        </>
+      )}
     </div>
-  )
+  );
 }
-
-export default App
